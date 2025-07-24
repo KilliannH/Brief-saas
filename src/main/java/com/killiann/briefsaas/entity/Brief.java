@@ -22,7 +22,9 @@ public class Brief {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    private String status; // ex: DRAFT, SENT, VALIDATED
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private BriefStatus status;
 
     @Column(unique = true, updatable = false)
     private String publicUuid; // lien public
@@ -32,6 +34,13 @@ public class Brief {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    @Column
+    private String clientName;
+
+    @Column
+    private LocalDateTime validatedAt;
+
 
     @PrePersist
     public void onCreate() {

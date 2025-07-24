@@ -10,7 +10,7 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    private static final String SECRET_KEY = "super-secret-key-that-should-be-in-env-file";
+    private static final String SECRET_KEY = "v@4FA48cYdM01JfuQNnmAk3w38RhuT%Mox7K5Z92tU8gB@bx";
     private static final long EXPIRATION_TIME = 86400000; // 24h
 
     private Key getSigningKey() {
