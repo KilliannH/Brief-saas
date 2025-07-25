@@ -2,14 +2,14 @@ package com.killiann.briefsaas.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "briefs")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Brief {
 
@@ -19,32 +19,52 @@ public class Brief {
 
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 5000)
     private String description;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private BriefStatus status;
+    @ElementCollection
+    private List<String> objectives;
+
+    private String targetAudience;
+
+    private String budget;
+
+    private LocalDateTime deadline;
+
+    @ElementCollection
+    private List<String> deliverables;
+
+    private String constraints;
+
+    private String clientName;
+
+    private Boolean clientValidated = false;
+
+    private String validationCode;
+
+    private LocalDateTime validatedAt;
 
     @Column(unique = true, updatable = false)
-    private String publicUuid; // lien public
+    private UUID publicUuid;
+
+    @Enumerated(EnumType.STRING)
+    private BriefStatus status = BriefStatus.DRAFT;
 
     private LocalDateTime createdAt;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
-
-    @Column
-    private String clientName;
-
-    @Column
-    private LocalDateTime validatedAt;
-
+    private LocalDateTime updatedAt;
 
     @PrePersist
-    public void onCreate() {
-        createdAt = LocalDateTime.now();
-        publicUuid = UUID.randomUUID().toString();
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
     }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User owner;
 }

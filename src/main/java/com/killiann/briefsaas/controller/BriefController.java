@@ -67,8 +67,15 @@ public class BriefController {
             @PathVariable String uuid,
             @RequestBody ClientValidationRequest request
     ) {
-        BriefResponse brief = briefService.publicValidate(uuid, request.getClientName());
+        BriefResponse brief = briefService.publicValidate(uuid, request.getClientName(), request.getCode());
         return ResponseEntity.ok(brief);
+    }
+
+    @PostMapping("/{id}/generate-code")
+    public ResponseEntity<String> generateCode(@PathVariable Long id) {
+        User currentUser = userService.getCurrentUser();
+        String code = briefService.generateValidationCode(id, currentUser);
+        return ResponseEntity.ok(code);
     }
 
     @DeleteMapping("/{id}")
