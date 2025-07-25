@@ -33,7 +33,7 @@ public class User implements UserDetails {
 
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
     private List<Brief> briefs;
 
     @PrePersist

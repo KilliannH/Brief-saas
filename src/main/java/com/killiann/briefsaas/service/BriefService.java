@@ -2,6 +2,7 @@ package com.killiann.briefsaas.service;
 
 import com.killiann.briefsaas.dto.BriefRequest;
 import com.killiann.briefsaas.dto.BriefResponse;
+import com.killiann.briefsaas.dto.PublicBriefResponse;
 import com.killiann.briefsaas.entity.Brief;
 import com.killiann.briefsaas.entity.BriefStatus;
 import com.killiann.briefsaas.entity.User;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -20,6 +22,7 @@ import java.util.UUID;
 public class BriefService {
 
     private final BriefRepository briefRepository;
+    private final MailService mailService;
 
     public BriefResponse createBrief(BriefRequest request, User user) {
         Brief brief = Brief.builder()
@@ -32,18 +35,28 @@ public class BriefService {
                 .deliverables(request.getDeliverables())
                 .constraints(request.getConstraints())
                 .clientName(request.getClientName())
+                .clientEmail(request.getClientEmail())
                 .owner(user)
                 .publicUuid(UUID.randomUUID())
                 .status(BriefStatus.DRAFT)
                 .build();
 
+        brief.setValidationCode(generateCode());
+        brief.setClientValidated(false);
+
         Brief saved = briefRepository.save(brief);
+
+        mailService.sendValidationEmail(
+                brief.getClientEmail(),
+                brief.getPublicUuid(),
+                brief.getValidationCode()
+        );
 
         return mapToResponse(saved);
     }
 
     public List<BriefResponse> getUserBriefs(User user) {
-        return briefRepository.findByUserId(user.getId())
+        return briefRepository.findByOwner(user)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -56,15 +69,19 @@ public class BriefService {
         return mapToResponse(brief);
     }
 
-    public BriefResponse getPublicBrief(String uuid) {
+    public PublicBriefResponse getPublicBrief(UUID uuid) {
         Brief brief = briefRepository.findByPublicUuid(uuid)
                 .orElseThrow(() -> new RuntimeException("Public brief not found"));
-        return mapToResponse(brief);
+        return mapToPublicResponse(brief);
     }
 
     public BriefResponse updateBrief(Long id, BriefRequest request, User user) {
         Brief brief = briefRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Brief not found"));
+
+        if (Boolean.TRUE.equals(brief.getClientValidated())) {
+            throw new IllegalStateException("Le brief a déjà été validé et ne peut plus être modifié.");
+        }
 
         if (!brief.getOwner().getId().equals(user.getId())) {
             try {
@@ -83,6 +100,7 @@ public class BriefService {
         brief.setDeliverables(request.getDeliverables());
         brief.setConstraints(request.getConstraints());
         brief.setClientName(request.getClientName());
+        brief.setClientEmail(request.getClientEmail());
 
         Brief updated = briefRepository.save(brief);
         return mapToResponse(updated);
@@ -92,6 +110,14 @@ public class BriefService {
         Brief brief = briefRepository.findById(id)
                 .filter(b -> b.getOwner().getId().equals(user.getId()))
                 .orElseThrow(() -> new RuntimeException("Brief not found"));
+
+        if (!brief.getOwner().getId().equals(user.getId())) {
+            try {
+                throw new AccessDeniedException("Unauthorized");
+            } catch (AccessDeniedException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
         briefRepository.delete(brief);
     }
@@ -108,7 +134,7 @@ public class BriefService {
         return mapToResponse(brief);
     }
 
-    public BriefResponse publicValidate(String uuid, String clientName, String code) {
+    public BriefResponse publicValidate(UUID uuid, String code) {
         Brief brief = briefRepository.findByPublicUuid(uuid)
                 .orElseThrow(() -> new RuntimeException("Public brief not found"));
 
@@ -118,27 +144,40 @@ public class BriefService {
 
         brief.setStatus(BriefStatus.VALIDATED);
         brief.setValidatedAt(LocalDateTime.now());
-        brief.setClientName(clientName);
         brief.setClientValidated(true);
         briefRepository.save(brief);
 
         return mapToResponse(brief);
     }
 
-    public String generateValidationCode(Long id, User user) {
-        Brief brief = briefRepository.findById(id)
-                .filter(b -> b.getOwner().getId().equals(user.getId()))
-                .orElseThrow(() -> new RuntimeException("Brief not found"));
-
-        String code = String.format("%06d", (int)(Math.random() * 1000000));
-        brief.setValidationCode(code);
-        briefRepository.save(brief);
-
-        return code;
+    private String generateCode() {
+        return String.format("%06d", new SecureRandom().nextInt(1_000_000));
     }
 
     private BriefResponse mapToResponse(Brief brief) {
         return BriefResponse.builder()
+                .id(brief.getId())
+                .publicUuid(brief.getPublicUuid())
+                .title(brief.getTitle())
+                .description(brief.getDescription())
+                .objectives(brief.getObjectives())
+                .targetAudience(brief.getTargetAudience())
+                .budget(brief.getBudget())
+                .deadline(brief.getDeadline())
+                .deliverables(brief.getDeliverables())
+                .constraints(brief.getConstraints())
+                .clientName(brief.getClientName())
+                .clientEmail(brief.getClientEmail())
+                .clientValidated(brief.getClientValidated())
+                .validatedAt(brief.getValidatedAt())
+                .status(brief.getStatus())
+                .createdAt(brief.getCreatedAt())
+                .updatedAt(brief.getUpdatedAt())
+                .build();
+    }
+
+    private PublicBriefResponse mapToPublicResponse(Brief brief) {
+        return PublicBriefResponse.builder()
                 .id(brief.getId())
                 .publicUuid(brief.getPublicUuid())
                 .title(brief.getTitle())

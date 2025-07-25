@@ -22,6 +22,7 @@ public class BriefResponse {
     private List<String> deliverables;
     private String constraints;
     private String clientName;
+    private String clientEmail;
     private Boolean clientValidated;
     private LocalDateTime validatedAt;
     private BriefStatus status;

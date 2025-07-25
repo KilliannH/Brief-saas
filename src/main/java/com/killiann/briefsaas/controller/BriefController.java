@@ -3,6 +3,7 @@ package com.killiann.briefsaas.controller;
 import com.killiann.briefsaas.dto.BriefRequest;
 import com.killiann.briefsaas.dto.BriefResponse;
 import com.killiann.briefsaas.dto.ClientValidationRequest;
+import com.killiann.briefsaas.dto.PublicBriefResponse;
 import com.killiann.briefsaas.entity.User;
 import com.killiann.briefsaas.service.BriefService;
 import com.killiann.briefsaas.service.UserService;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/briefs")
@@ -43,8 +45,8 @@ public class BriefController {
     }
 
     @GetMapping("/public/{uuid}")
-    public ResponseEntity<BriefResponse> getPublicBrief(@PathVariable String uuid) {
-        BriefResponse brief = briefService.getPublicBrief(uuid);
+    public ResponseEntity<PublicBriefResponse> getPublicBrief(@PathVariable UUID uuid) {
+        PublicBriefResponse brief = briefService.getPublicBrief(uuid);
         return ResponseEntity.ok(brief);
     }
 
@@ -64,18 +66,11 @@ public class BriefController {
 
     @PutMapping("/public/{uuid}/validate")
     public ResponseEntity<BriefResponse> publicValidate(
-            @PathVariable String uuid,
+            @PathVariable UUID uuid,
             @RequestBody ClientValidationRequest request
     ) {
-        BriefResponse brief = briefService.publicValidate(uuid, request.getClientName(), request.getCode());
+        BriefResponse brief = briefService.publicValidate(uuid, request.getCode());
         return ResponseEntity.ok(brief);
-    }
-
-    @PostMapping("/{id}/generate-code")
-    public ResponseEntity<String> generateCode(@PathVariable Long id) {
-        User currentUser = userService.getCurrentUser();
-        String code = briefService.generateValidationCode(id, currentUser);
-        return ResponseEntity.ok(code);
     }
 
     @DeleteMapping("/{id}")

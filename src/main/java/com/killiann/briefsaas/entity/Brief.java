@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
+@Table(name = "briefs")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -37,6 +38,8 @@ public class Brief {
     private String constraints;
 
     private String clientName;
+
+    private String clientEmail;
 
     private Boolean clientValidated = false;
 
