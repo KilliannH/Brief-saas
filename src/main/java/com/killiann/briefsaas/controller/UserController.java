@@ -48,7 +48,9 @@ public class UserController {
                 user.getEmail(),
                 user.getFirstname(),
                 user.getLastname(),
-                user.getProfileImage()
+                user.getProfileImage(),
+                user.getCurrentPriceId(),
+                user.isSubscriptionActive()
         );
     }
 }

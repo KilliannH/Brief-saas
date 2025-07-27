@@ -14,4 +14,6 @@ public class UserResponse implements Serializable {
     private String firstname;
     private String lastname;
     private String profileImage;
+    private String currentPriceId;
+    private Boolean subscriptionActive;
 }

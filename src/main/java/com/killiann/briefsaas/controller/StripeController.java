@@ -1,26 +1,36 @@
 package com.killiann.briefsaas.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.killiann.briefsaas.entity.User;
 import com.killiann.briefsaas.repository.UserRepository;
 import com.killiann.briefsaas.service.StripeService;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
+import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.Subscription;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
-import com.stripe.param.SubscriptionUpdateParams;
+import com.stripe.param.billingportal.SessionCreateParams;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/stripe")
 public class StripeController {
+
+    private static final Logger log = LoggerFactory.getLogger(StripeController.class);
 
     @Value("${stripe.webhook.secret}")
     private String endpointSecret;
@@ -57,26 +67,102 @@ public class StripeController {
         switch (event.getType()) {
 
             case "checkout.session.completed" -> {
-                Session session = (Session) event.getDataObjectDeserializer().getObject().orElse(null);
+                ObjectMapper mapper = new ObjectMapper();
+                Session session = null;
+
+                // Tentative via désérialisation
+                EventDataObjectDeserializer deserializer = event.getDataObjectDeserializer();
+                if (deserializer.getObject().isPresent()) {
+                    Object obj = deserializer.getObject().get();
+                    if (obj instanceof Session s) {
+                        session = s;
+                        log.info("✅ Session désérialisée : {}", session.getId());
+                    }
+                }
+
+                // Fallback via JSON brut
+                if (session == null) {
+                    try {
+                        String json = event.getData().getObject().toJson();
+                        JsonNode node = mapper.readTree(json);
+                        String sessionId = node.get("id").asText();
+                        session = Session.retrieve(sessionId);
+                        log.info("↩️ Session récupérée via fallback: {}", sessionId);
+                    } catch (Exception e) {
+                        log.error("❌ Impossible de récupérer la session via JSON", e);
+                    }
+                }
+
+                // Mise à jour utilisateur
                 if (session != null && session.getCustomerEmail() != null) {
-                    userRepository.findByEmail(session.getCustomerEmail()).ifPresent(user -> {
-                        user.setSubscriptionActive(true);
-                        user.setStripeCustomerId(session.getCustomer());
-                        user.setStripeSubscriptionId(session.getSubscription());
-                        userRepository.save(user);
-                    });
+                    Session finalSession = session;
+
+                    if (session.getSubscription() != null) {
+                        Subscription stripeSub = null;
+                        try {
+                            stripeSub = Subscription.retrieve(session.getSubscription());
+                        } catch (StripeException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        // Récupère l'ID du plan (priceId)
+                        String priceId = stripeSub.getItems().getData().get(0).getPrice().getId();
+
+                        userRepository.findByEmail(session.getCustomerEmail()).ifPresent(user -> {
+                            user.setSubscriptionActive(true);
+                            user.setStripeCustomerId(finalSession.getCustomer());
+                            user.setStripeSubscriptionId(finalSession.getSubscription());
+                            user.setCurrentPriceId(priceId);
+                            userRepository.save(user);
+                            log.info("✅ Utilisateur mis à jour : {}", user.getEmail());
+                        });
+                    } else {
+                        log.warn("❗ Subscription null");
+                    }
+                } else {
+                    log.warn("❗ Session null ou email manquant");
                 }
             }
 
             case "customer.subscription.deleted" -> {
-                Subscription subscription = (Subscription) event.getDataObjectDeserializer().getObject().orElse(null);
+                ObjectMapper mapper = new ObjectMapper();
+                Subscription subscription = null;
+
+                // Tentative de désérialisation
+                EventDataObjectDeserializer deserializer = event.getDataObjectDeserializer();
+                if (deserializer.getObject().isPresent()) {
+                    Object obj = deserializer.getObject().get();
+                    if (obj instanceof Subscription s) {
+                        subscription = s;
+                        log.info("✅ Subscription désérialisée : {}", s.getId());
+                    }
+                }
+
+                // Fallback JSON brut
+                if (subscription == null) {
+                    try {
+                        String json = event.getData().getObject().toJson();
+                        JsonNode node = mapper.readTree(json);
+                        String subscriptionId = node.get("id").asText();
+                        subscription = Subscription.retrieve(subscriptionId);
+                        log.info("↩️ Subscription récupérée via fallback : {}", subscriptionId);
+                    } catch (Exception e) {
+                        log.error("❌ Erreur fallback récupération Subscription", e);
+                    }
+                }
+
+                // Mise à jour BDD
                 if (subscription != null) {
                     String customerId = subscription.getCustomer();
                     userRepository.findByStripeCustomerId(customerId).ifPresent(user -> {
                         user.setSubscriptionActive(false);
+                        user.setCurrentPriceId(null);
                         user.setStripeSubscriptionId(null);
                         userRepository.save(user);
+                        log.info("🚫 Abonnement désactivé pour utilisateur {}", user.getEmail());
                     });
+                } else {
+                    log.warn("❗ Subscription toujours null après tentative de fallback");
                 }
             }
         }
@@ -84,33 +170,16 @@ public class StripeController {
         return ResponseEntity.ok("Webhook reçu");
     }
 
-    @PostMapping("/upgrade")
-    public ResponseEntity<?> upgradePlan(Authentication auth, @RequestBody Map<String, String> req) {
-        try {
-            User user = userRepository.findByEmail(auth.getName())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+    @PostMapping("/portal")
+    public ResponseEntity<Map<String, String>> createPortal(@AuthenticationPrincipal User user) throws StripeException {
+        SessionCreateParams params = SessionCreateParams.builder()
+                .setCustomer(user.getStripeCustomerId())
+                .setReturnUrl("https://brief-mate.com/account")
+                .build();
 
-            if (user.getStripeSubscriptionId() == null) {
-                return ResponseEntity.badRequest().body("Aucun abonnement actif.");
-            }
+        com.stripe.model.billingportal.Session portalSession = com.stripe.model.billingportal.Session.create(params);
+        String url = portalSession.getUrl();
 
-            String newPriceId = req.get("priceId");
-
-            Subscription subscription = Subscription.retrieve(user.getStripeSubscriptionId());
-
-            SubscriptionUpdateParams params = SubscriptionUpdateParams.builder()
-                    .setCancelAtPeriodEnd(false)
-                    .addItem(SubscriptionUpdateParams.Item.builder()
-                            .setId(subscription.getItems().getData().get(0).getId())
-                            .setPrice(newPriceId)
-                            .build())
-                    .build();
-
-            subscription.update(params);
-
-            return ResponseEntity.ok("Abonnement mis à jour.");
-        } catch (StripeException e) {
-            return ResponseEntity.status(500).body("Erreur Stripe : " + e.getMessage());
-        }
+        return ResponseEntity.ok(Map.of("url", url));
     }
 }

@@ -42,6 +42,9 @@ public class User implements UserDetails {
     @Column(name = "stripe_subscription_id")
     private String stripeSubscriptionId;
 
+    @Column(name = "current_price_id")
+    private String currentPriceId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
