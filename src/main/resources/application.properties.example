@@ -17,3 +17,9 @@ spring.mail.username=
 spring.mail.password=
 spring.mail.properties.mail.smtp.auth=true
 spring.mail.properties.mail.smtp.starttls.enable=true
+
+stripe.api.secret=sk_test_xxx
+stripe.webhook.secret=whsec_yyy
+
+stripe.success.url=http://localhost:5173/payment/success
+stripe.cancel.url=http://localhost:5173/payment/cancel

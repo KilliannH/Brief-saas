@@ -14,23 +14,28 @@ public class MailService {
     private final JavaMailSender mailSender;
 
     public void sendValidationEmail(String to, UUID publicUuid, String code) {
-        String subject = "Votre brief à valider";
+        String subject = "[BriefMate] Validez le brief de votre projet";
         String link = "https://tonsite.com/public/briefs/" + publicUuid;
 
         String content = """
-                Bonjour,
+        Bonjour,
 
-                Voici votre brief à valider : %s
+        Vous avez reçu un brief à valider via BriefMate.
 
-                Code de validation : %s
+        Cliquez ici pour le consulter et le valider :
+        %s
 
-                Merci !
-                """.formatted(link, code);
+        Code de validation : %s
+
+        ---
+        BriefMate — Validez vos projets facilement, sans créer de compte.
+        """.formatted(link, code);
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(to);
         message.setSubject(subject);
         message.setText(content);
+        message.setFrom("no-reply@brief-mate.com");
 
         mailSender.send(message);
     }

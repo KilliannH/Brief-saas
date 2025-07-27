@@ -3,10 +3,8 @@ package com.killiann.briefsaas.dto;
 import lombok.Data;
 
 @Data
-public class SignupRequest {
-    private String email;
-    private String password;
+public class UpdateProfileRequest {
     private String firstname;
     private String lastname;
-    String profileImage;
+    private String profileImage;
 }

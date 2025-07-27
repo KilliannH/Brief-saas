@@ -27,6 +27,21 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String password;
 
+    private String firstname;
+    private String lastname;
+
+    @Column(name = "profile_image")
+    private String profileImage;
+
+    @Column(name = "subscription_active")
+    private boolean subscriptionActive = false;
+
+    @Column(name = "stripe_customer_id")
+    private String stripeCustomerId;
+
+    @Column(name = "stripe_subscription_id")
+    private String stripeSubscriptionId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
