@@ -4,6 +4,7 @@ import com.killiann.briefsaas.entity.BriefStatus;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -18,7 +19,7 @@ public class BriefResponse {
     private List<String> objectives;
     private String targetAudience;
     private String budget;
-    private LocalDateTime deadline;
+    private LocalDate deadline;
     private List<String> deliverables;
     private String constraints;
     private String clientName;

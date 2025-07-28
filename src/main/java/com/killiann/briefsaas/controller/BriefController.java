@@ -5,6 +5,8 @@ import com.killiann.briefsaas.dto.BriefResponse;
 import com.killiann.briefsaas.dto.ClientValidationRequest;
 import com.killiann.briefsaas.dto.PublicBriefResponse;
 import com.killiann.briefsaas.entity.User;
+import com.killiann.briefsaas.exception.BadRequestException;
+import com.killiann.briefsaas.exception.ForbiddenException;
 import com.killiann.briefsaas.service.BriefService;
 import com.killiann.briefsaas.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +37,13 @@ public class BriefController {
         User currentUser = userService.getCurrentUser();
         BriefResponse brief = briefService.createBrief(request, currentUser);
         return ResponseEntity.ok(brief);
+    }
+
+    @PostMapping("/{id}/submit")
+    public ResponseEntity<BriefResponse> submitBriefToClient(@PathVariable Long id) throws BadRequestException, ForbiddenException {
+        User currentUser = userService.getCurrentUser();
+        BriefResponse response = briefService.submitToClient(id, currentUser);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")

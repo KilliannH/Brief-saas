@@ -2,6 +2,8 @@ package com.killiann.briefsaas.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -30,7 +32,7 @@ public class Brief {
 
     private String budget;
 
-    private LocalDateTime deadline;
+    private LocalDate deadline;
 
     @ElementCollection
     private List<String> deliverables;

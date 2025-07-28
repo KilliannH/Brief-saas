@@ -1,14 +1,20 @@
 package com.killiann.briefsaas.service;
 
+import com.killiann.briefsaas.controller.StripeController;
 import com.killiann.briefsaas.dto.BriefRequest;
 import com.killiann.briefsaas.dto.BriefResponse;
 import com.killiann.briefsaas.dto.PublicBriefResponse;
 import com.killiann.briefsaas.entity.Brief;
 import com.killiann.briefsaas.entity.BriefStatus;
 import com.killiann.briefsaas.entity.User;
+import com.killiann.briefsaas.exception.BadRequestException;
+import com.killiann.briefsaas.exception.ForbiddenException;
 import com.killiann.briefsaas.exception.NotFoundException;
 import com.killiann.briefsaas.repository.BriefRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
@@ -23,6 +29,7 @@ public class BriefService {
 
     private final BriefRepository briefRepository;
     private final MailService mailService;
+    private static final Logger log = LoggerFactory.getLogger(BriefService.class);
 
     public BriefResponse createBrief(BriefRequest request, User user) {
         Brief brief = Brief.builder()
@@ -51,6 +58,33 @@ public class BriefService {
                 brief.getPublicUuid(),
                 brief.getValidationCode()
         );
+
+        return mapToResponse(saved);
+    }
+
+    @Transactional
+    public BriefResponse submitToClient(Long briefId, User currentUser) throws BadRequestException, ForbiddenException {
+        Brief brief = briefRepository.findById(briefId)
+                .orElseThrow(() -> new NotFoundException("Brief not found with id " + briefId));
+
+        if (brief.getStatus() == BriefStatus.SUBMITTED) {
+            throw new BadRequestException("Brief already submitted to the client.");
+        }
+
+        if (!brief.getOwner().getId().equals(currentUser.getId())) {
+            throw new ForbiddenException("Access denied.");
+        }
+
+        mailService.sendValidationEmail(
+                brief.getClientEmail(),
+                brief.getPublicUuid(),
+                brief.getValidationCode()
+        );
+
+        brief.setStatus(BriefStatus.SUBMITTED);
+        Brief saved = briefRepository.save(brief);
+
+        log.info("Brief {} submitted to client {}", briefId, brief.getClientEmail());
 
         return mapToResponse(saved);
     }

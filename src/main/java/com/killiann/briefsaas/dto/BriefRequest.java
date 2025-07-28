@@ -2,7 +2,7 @@ package com.killiann.briefsaas.dto;
 
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -12,7 +12,7 @@ public class BriefRequest {
     private List<String> objectives;
     private String targetAudience;
     private String budget;
-    private LocalDateTime deadline;
+    private LocalDate deadline;
     private List<String> deliverables;
     private String constraints;
     private String clientName;
