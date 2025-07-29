@@ -8,5 +8,6 @@ public class SignupRequest {
     private String password;
     private String firstname;
     private String lastname;
-    String profileImage;
+    private String profileImage;
+    private String language;
 }

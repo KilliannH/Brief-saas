@@ -1,10 +1,16 @@
 package com.killiann.briefsaas.service;
 
+import com.killiann.briefsaas.entity.User;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
-import org.springframework.mail.SimpleMailMessage;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -12,31 +18,53 @@ import java.util.UUID;
 public class MailService {
 
     private final JavaMailSender mailSender;
+    private final MessageSource messageSource;
 
-    public void sendValidationEmail(String to, UUID publicUuid, String code) {
-        String subject = "[BriefMate] Validez le brief de votre projet";
-        String link = "https://brief-mate.com/public/briefs/" + publicUuid;
+    @Value("${frontend.baseUrl}")
+    private String frontendBaseUrl;
 
-        String content = """
-        Bonjour,
+    public void sendValidationEmail(String to, UUID publicUuid, String code, String lang) {
+        Locale locale = Locale.forLanguageTag(lang);
+        String subject = messageSource.getMessage("mail.validation.subject", null,"!!! fallback sujet FR !!!", locale);
 
-        Vous avez reçu un brief à valider via BriefMate.
+        String link = frontendBaseUrl + "/public/briefs/" + publicUuid;
+        String bodyHtml = messageSource.getMessage("mail.validation.body.html", new Object[]{link, code}, locale);
 
-        Cliquez ici pour le consulter et le valider :
-        %s
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
-        Code de validation : %s
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(bodyHtml, true); // true = HTML
 
-        ---
-        BriefMate — Validez vos projets facilement, sans créer de compte.
-        """.formatted(link, code);
+            helper.setFrom("no-reply@briefmate.com");
 
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(content);
-        message.setFrom("no-reply@brief-mate.com");
+            mailSender.send(mimeMessage);
 
-        mailSender.send(message);
+        } catch (MessagingException e) {
+            throw new RuntimeException("Erreur lors de l'envoi de l'email de validation", e);
+        }
+    }
+
+    public void sendVerificationEmail(User user, String token) {
+        Locale locale = Locale.forLanguageTag(user.getLanguage()); // "fr", "en", etc.
+
+        String subject = messageSource.getMessage("mail.verify.subject", null, locale);
+        String link = frontendBaseUrl + "/verify?token=" + token;
+        String content = messageSource.getMessage("mail.verify.body", new Object[]{link}, locale);
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setTo(user.getEmail());
+            helper.setSubject(subject);
+            helper.setText(content, true); // HTML enabled
+
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            throw new RuntimeException("Failed to send verification email", e);
+        }
     }
 }

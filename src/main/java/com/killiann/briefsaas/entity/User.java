@@ -30,6 +30,12 @@ public class User implements UserDetails {
     private String firstname;
     private String lastname;
 
+    @Column(nullable = false)
+    private boolean enabled = false;
+
+    @Column(nullable = false)
+    private String language = "fr";
+
     @Column(name = "profile_image")
     private String profileImage;
 

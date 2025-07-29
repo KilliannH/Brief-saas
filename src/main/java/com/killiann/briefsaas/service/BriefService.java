@@ -52,12 +52,6 @@ public class BriefService {
 
         Brief saved = briefRepository.save(brief);
 
-        mailService.sendValidationEmail(
-                brief.getClientEmail(),
-                brief.getPublicUuid(),
-                brief.getValidationCode()
-        );
-
         return mapToResponse(saved);
     }
 
@@ -77,7 +71,8 @@ public class BriefService {
         mailService.sendValidationEmail(
                 brief.getClientEmail(),
                 brief.getPublicUuid(),
-                brief.getValidationCode()
+                brief.getValidationCode(),
+                currentUser.getLanguage()
         );
 
         brief.setStatus(BriefStatus.SUBMITTED);
