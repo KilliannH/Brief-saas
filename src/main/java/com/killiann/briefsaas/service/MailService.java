@@ -15,7 +15,7 @@ public class MailService {
 
     public void sendValidationEmail(String to, UUID publicUuid, String code) {
         String subject = "[BriefMate] Validez le brief de votre projet";
-        String link = "https://tonsite.com/public/briefs/" + publicUuid;
+        String link = "https://brief-mate.com/public/briefs/" + publicUuid;
 
         String content = """
         Bonjour,

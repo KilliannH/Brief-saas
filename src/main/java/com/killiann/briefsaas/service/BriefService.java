@@ -1,6 +1,5 @@
 package com.killiann.briefsaas.service;
 
-import com.killiann.briefsaas.controller.StripeController;
 import com.killiann.briefsaas.dto.BriefRequest;
 import com.killiann.briefsaas.dto.BriefResponse;
 import com.killiann.briefsaas.dto.PublicBriefResponse;
@@ -87,6 +86,21 @@ public class BriefService {
         log.info("Brief {} submitted to client {}", briefId, brief.getClientEmail());
 
         return mapToResponse(saved);
+    }
+
+    @Transactional
+    public BriefResponse updateBriefStatus(Long id, BriefStatus status, User currentUser) throws ForbiddenException {
+        Brief brief = briefRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Brief not found with id " + id));
+
+        if (!brief.getOwner().getId().equals(currentUser.getId())) {
+            throw new ForbiddenException("You are not allowed to update this brief.");
+        }
+
+        brief.setStatus(status);
+
+        Brief updated = briefRepository.save(brief);
+        return mapToResponse(updated);
     }
 
     public List<BriefResponse> getUserBriefs(User user) {

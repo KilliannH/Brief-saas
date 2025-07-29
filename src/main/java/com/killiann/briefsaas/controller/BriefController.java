@@ -1,9 +1,6 @@
 package com.killiann.briefsaas.controller;
 
-import com.killiann.briefsaas.dto.BriefRequest;
-import com.killiann.briefsaas.dto.BriefResponse;
-import com.killiann.briefsaas.dto.ClientValidationRequest;
-import com.killiann.briefsaas.dto.PublicBriefResponse;
+import com.killiann.briefsaas.dto.*;
 import com.killiann.briefsaas.entity.User;
 import com.killiann.briefsaas.exception.BadRequestException;
 import com.killiann.briefsaas.exception.ForbiddenException;
@@ -64,6 +61,16 @@ public class BriefController {
         User currentUser = userService.getCurrentUser();
         BriefResponse brief = briefService.updateBrief(id, request, currentUser);
         return ResponseEntity.ok(brief);
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<BriefResponse> updateBriefStatus(
+            @PathVariable Long id,
+            @RequestBody BriefUpdateRequest request
+    ) throws ForbiddenException {
+        User currentUser = userService.getCurrentUser();
+        BriefResponse updated = briefService.updateBriefStatus(id, request.getStatus(), currentUser);
+        return ResponseEntity.ok(updated);
     }
 
     @PutMapping("/{id}/validate")
