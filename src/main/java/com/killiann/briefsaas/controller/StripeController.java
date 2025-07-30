@@ -3,6 +3,7 @@ package com.killiann.briefsaas.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.killiann.briefsaas.entity.User;
+import com.killiann.briefsaas.exception.NotFoundException;
 import com.killiann.briefsaas.repository.UserRepository;
 import com.killiann.briefsaas.service.StripeService;
 import com.stripe.exception.StripeException;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.Map;
 
 @RestController
@@ -162,6 +164,57 @@ public class StripeController {
                     });
                 } else {
                     log.warn("❗ Subscription toujours null après tentative de fallback");
+                }
+            }
+
+            case "customer.subscription.updated" -> {
+                ObjectMapper mapper = new ObjectMapper();
+                Subscription subscription = null;
+
+                // Tentative de désérialisation directe
+                EventDataObjectDeserializer deserializer = event.getDataObjectDeserializer();
+                if (deserializer.getObject().isPresent()) {
+                    Object obj = deserializer.getObject().get();
+                    if (obj instanceof Subscription s) {
+                        subscription = s;
+                        log.info("✅ Subscription désérialisée (update) : {}", s.getId());
+                    }
+                }
+
+                // Fallback via JSON brut
+                if (subscription == null) {
+                    try {
+                        String json = event.getData().getObject().toJson();
+                        JsonNode node = mapper.readTree(json);
+                        String subscriptionId = node.get("id").asText();
+                        subscription = Subscription.retrieve(subscriptionId);
+                        log.info("↩️ Subscription récupérée via fallback (update) : {}", subscriptionId);
+                    } catch (Exception e) {
+                        log.error("❌ Erreur fallback récupération Subscription (update)", e);
+                    }
+                }
+
+                // Mise à jour de l’utilisateur
+                if (subscription != null) {
+                    String stripeCustomerId = subscription.getCustomer();
+                    boolean cancelAtPeriodEnd = subscription.getCancelAtPeriodEnd();
+                    boolean active = "active".equals(subscription.getStatus());
+
+                    Subscription finalSubscription = subscription;
+                    userRepository.findByStripeCustomerId(stripeCustomerId).ifPresent(user -> {
+                        user.setSubscriptionActive(active);
+                        user.setCancelAtPeriodEnd(cancelAtPeriodEnd);
+                        user.setSubscriptionEndAt(
+                                Instant.ofEpochSecond(finalSubscription.getCurrentPeriodEnd())
+                        );
+                        user.setCurrentPriceId(finalSubscription.getItems().getData().get(0).getPrice().getId()); // facultatif
+                        user.setStripeSubscriptionId(finalSubscription.getId());
+                        userRepository.save(user);
+
+                        log.info("🔄 Utilisateur {} mis à jour (update)", user.getEmail());
+                    });
+                } else {
+                    log.warn("❗ Subscription toujours null après fallback (update)");
                 }
             }
         }

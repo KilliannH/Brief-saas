@@ -50,7 +50,9 @@ public class UserController {
                 user.getLastname(),
                 user.getProfileImage(),
                 user.getCurrentPriceId(),
-                user.isSubscriptionActive()
+                user.isSubscriptionActive(),
+                user.isCancelAtPeriodEnd(),
+                user.getSubscriptionEndAt()
         );
     }
 }

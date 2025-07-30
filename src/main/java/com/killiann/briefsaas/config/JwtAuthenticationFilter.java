@@ -1,5 +1,7 @@
 package com.killiann.briefsaas.config;
 
+import com.killiann.briefsaas.entity.User;
+import com.killiann.briefsaas.exception.NotFoundException;
 import com.killiann.briefsaas.repository.UserRepository;
 import com.killiann.briefsaas.util.JwtUtil;
 import jakarta.servlet.FilterChain;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.Instant;
 
 @Component
 @RequiredArgsConstructor
@@ -40,14 +43,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String email = jwtUtil.extractEmail(token);
 
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userRepository.findByEmail(email).orElse(null);
+            User user = userRepository.findByEmail(email).orElse(null);
 
-            if (userDetails != null && jwtUtil.isTokenValid(token)) {
+            if (user != null && jwtUtil.isTokenValid(token)) {
+                // Expiration de l'abonnement ?
+                if (user.isCancelAtPeriodEnd() && user.getSubscriptionEndAt() != null &&
+                        Instant.now().isAfter(user.getSubscriptionEndAt())) {
+
+                    if (user.isSubscriptionActive()) {
+                        user.setSubscriptionActive(false);
+                        userRepository.save(user);
+                    }
+                }
+
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
+                                user, null, user.getAuthorities()
                         );
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);

@@ -3,16 +3,10 @@ package com.killiann.briefsaas.controller;
 import com.killiann.briefsaas.dto.AuthResponse;
 import com.killiann.briefsaas.dto.LoginRequest;
 import com.killiann.briefsaas.dto.SignupRequest;
-import com.killiann.briefsaas.entity.EmailVerificationToken;
-import com.killiann.briefsaas.entity.User;
 import com.killiann.briefsaas.service.AuthService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/auth")

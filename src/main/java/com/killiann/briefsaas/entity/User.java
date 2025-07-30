@@ -6,6 +6,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -41,6 +42,12 @@ public class User implements UserDetails {
 
     @Column(name = "subscription_active")
     private boolean subscriptionActive = false;
+
+    @Column(name = "cancel_at_period_end")
+    private boolean cancelAtPeriodEnd = false;
+
+    @Column(name = "subscription_end_at")
+    private Instant subscriptionEndAt;
 
     @Column(name = "stripe_customer_id")
     private String stripeCustomerId;

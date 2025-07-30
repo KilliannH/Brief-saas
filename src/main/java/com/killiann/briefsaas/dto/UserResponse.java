@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.time.Instant;
 
 @Data
 @NoArgsConstructor
@@ -16,4 +17,6 @@ public class UserResponse implements Serializable {
     private String profileImage;
     private String currentPriceId;
     private Boolean subscriptionActive;
+    private Boolean cancelAtPeriodEnd;
+    private Instant subscriptionEndAt;
 }
