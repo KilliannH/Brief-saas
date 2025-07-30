@@ -1,16 +1,20 @@
 package com.killiann.briefsaas.controller;
 
 import com.killiann.briefsaas.dto.*;
+import com.killiann.briefsaas.entity.Brief;
 import com.killiann.briefsaas.entity.User;
 import com.killiann.briefsaas.exception.BadRequestException;
 import com.killiann.briefsaas.exception.ForbiddenException;
 import com.killiann.briefsaas.service.BriefService;
+import com.killiann.briefsaas.service.PdfService;
 import com.killiann.briefsaas.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @RestController
@@ -20,6 +24,7 @@ import java.util.UUID;
 public class BriefController {
 
     private final BriefService briefService;
+    private final PdfService pdfService;
     private final UserService userService;
 
     @GetMapping
@@ -71,6 +76,25 @@ public class BriefController {
         User currentUser = userService.getCurrentUser();
         BriefResponse updated = briefService.updateBriefStatus(id, request.getStatus(), currentUser);
         return ResponseEntity.ok(updated);
+    }
+
+    @GetMapping("/{id}/pdf")
+    public ResponseEntity<byte[]> downloadBriefPdf(@PathVariable Long id, @RequestHeader(name = "Accept-Language", required = false) Locale locale) throws ForbiddenException {
+        User currentUser = userService.getCurrentUser();
+        Brief brief = briefService.getBriefByIdForCurrentUser(id, currentUser);
+
+        byte[] pdfBytes;
+        try {
+            pdfBytes = pdfService.generateBriefPdf(brief, locale != null ? locale : Locale.FRENCH);
+        } catch (IOException e) {
+            throw new RuntimeException("Erreur génération PDF", e);
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(ContentDisposition.inline().filename("brief.pdf").build());
+
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
 
     @PutMapping("/{id}/validate")

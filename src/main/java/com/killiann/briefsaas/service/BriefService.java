@@ -252,4 +252,16 @@ public class BriefService {
             }
         }
     }
+
+    public Brief getBriefByIdForCurrentUser(Long briefId, User currentUser) throws ForbiddenException {
+        Brief brief = briefRepository.findById(briefId)
+                .orElseThrow(() -> new NotFoundException("Brief not found"));
+
+        Long currentUserId = currentUser.getId();
+        if (!brief.getOwner().getId().equals(currentUserId)) {
+            throw new ForbiddenException("You are not allowed to access this brief.");
+        }
+
+        return brief;
+    }
 }
