@@ -30,7 +30,9 @@ public class BriefService {
     private final MailService mailService;
     private static final Logger log = LoggerFactory.getLogger(BriefService.class);
 
-    public BriefResponse createBrief(BriefRequest request, User user) {
+    public BriefResponse createBrief(BriefRequest request, User user) throws ForbiddenException {
+        checkBriefCreationAllowed(user);
+
         Brief brief = Brief.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
@@ -238,5 +240,16 @@ public class BriefService {
                 .createdAt(brief.getCreatedAt())
                 .updatedAt(brief.getUpdatedAt())
                 .build();
+    }
+
+    private void checkBriefCreationAllowed(User currentUser) throws ForbiddenException {
+        boolean isFree = !currentUser.isSubscriptionActive(); // ou getSubscription() == null
+
+        if (isFree) {
+            long briefsCount = briefRepository.countByOwner(currentUser);
+            if (briefsCount >= 1) {
+                throw new ForbiddenException("Limite atteinte pour un compte gratuit.");
+            }
+        }
     }
 }

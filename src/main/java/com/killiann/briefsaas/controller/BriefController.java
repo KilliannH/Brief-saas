@@ -30,7 +30,7 @@ public class BriefController {
     }
 
     @PostMapping
-    public ResponseEntity<BriefResponse> createBrief(@RequestBody BriefRequest request) {
+    public ResponseEntity<BriefResponse> createBrief(@RequestBody BriefRequest request) throws ForbiddenException {
         User currentUser = userService.getCurrentUser();
         BriefResponse brief = briefService.createBrief(request, currentUser);
         return ResponseEntity.ok(brief);

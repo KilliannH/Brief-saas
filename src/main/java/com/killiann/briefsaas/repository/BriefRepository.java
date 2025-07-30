@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface BriefRepository extends JpaRepository<Brief, Long> {
     List<Brief> findByOwner(User owner);
     Optional<Brief> findByPublicUuid(UUID uuid);
+    long countByOwner(User user);
 }
