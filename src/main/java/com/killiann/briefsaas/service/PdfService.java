@@ -6,6 +6,7 @@ import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.properties.TextAlignment;
 import com.killiann.briefsaas.entity.Brief;
 import com.killiann.briefsaas.util.FooterHandler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +15,10 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.Year;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.Locale;
 
 @Service
@@ -25,44 +29,66 @@ public class PdfService {
 
     public byte[] generateBriefPdf(Brief brief, Locale locale) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
         PdfWriter writer = new PdfWriter(baos);
         PdfDocument pdf = new PdfDocument(writer);
         Document document = new Document(pdf);
 
-        // Titre du brief
+        // Titre principal = titre du brief
         document.add(new Paragraph(brief.getTitle())
                 .setFontSize(18)
                 .setBold()
                 .setMarginBottom(10));
 
         // Description
-        document.add(new Paragraph(brief.getDescription())
-                .setItalic()
-                .setFontSize(12)
-                .setMarginBottom(15));
+        if (brief.getDescription() != null) {
+            document.add(new Paragraph(brief.getDescription()).setMarginBottom(10));
+        }
 
-        // Champs simples
+        // Champs classiques
         document.add(new Paragraph(messageSource.getMessage("pdf.client", null, locale) + ": " + brief.getClientName()));
         document.add(new Paragraph(messageSource.getMessage("pdf.budget", null, locale) + ": " + brief.getBudget()));
         document.add(new Paragraph(messageSource.getMessage("pdf.deadline", null, locale) + ": " + brief.getDeadline()));
         document.add(new Paragraph(messageSource.getMessage("pdf.audience", null, locale) + ": " + brief.getTargetAudience()));
-        document.add(new Paragraph(messageSource.getMessage("pdf.constraints", null, locale) + ": " + brief.getConstraints()).setMarginBottom(15));
 
         // Objectifs avec puces
-        document.add(new Paragraph(messageSource.getMessage("pdf.objectives", null, locale) + " :").setBold());
-        if (brief.getObjectives() != null) {
-            for (String objective : brief.getObjectives()) {
-                document.add(new Paragraph("• " + objective).setMarginLeft(10));
+        if (brief.getObjectives() != null && !brief.getObjectives().isEmpty()) {
+            document.add(new Paragraph(messageSource.getMessage("pdf.objectives", null, locale) + ":"));
+            for (String obj : brief.getObjectives()) {
+                document.add(new Paragraph("• " + obj).setMarginLeft(10));
             }
         }
 
         // Livrables avec puces
-        document.add(new Paragraph("\n" + messageSource.getMessage("pdf.deliverables", null, locale) + " :").setBold());
-        if (brief.getDeliverables() != null) {
+        if (brief.getDeliverables() != null && !brief.getDeliverables().isEmpty()) {
+            document.add(new Paragraph(messageSource.getMessage("pdf.deliverables", null, locale) + ":"));
             for (String deliv : brief.getDeliverables()) {
                 document.add(new Paragraph("• " + deliv).setMarginLeft(10));
             }
+        }
+
+        // Contraintes
+        if (brief.getConstraints() != null && !brief.getConstraints().isBlank()) {
+            document.add(new Paragraph(messageSource.getMessage("pdf.constraints", null, locale) + ": " + brief.getConstraints()));
+        }
+
+        // Validation par le client (si applicable)
+        if (brief.getClientValidated() != null
+                && brief.getClientValidated()
+                && brief.getValidatedAt() != null
+                && brief.getClientName() != null) {
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(locale);
+            String formattedDate = brief.getValidatedAt().format(formatter);
+
+            String validatedLine = messageSource.getMessage("pdf.validated", null, locale)
+                    + " " + formattedDate + " "
+                    + messageSource.getMessage("pdf.by", null, locale)
+                    + " " + brief.getClientName() + ".";
+
+            document.add(new Paragraph(validatedLine)
+                    .setItalic()
+                    .setFontColor(ColorConstants.DARK_GRAY)
+                    .setMarginTop(20));
         }
 
         // Footer

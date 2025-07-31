@@ -32,11 +32,12 @@ public class BriefController {
     @GetMapping
     public ResponseEntity<Page<BriefResponse>> getMyBriefs(
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "4") int size
     ) {
         User currentUser = userService.getCurrentUser();
-        Page<BriefResponse> briefs = briefService.getUserBriefs(currentUser, status, page, size);
+        Page<BriefResponse> briefs = briefService.getUserBriefs(currentUser, status, search, page, size);
         return ResponseEntity.ok(briefs);
     }
 
