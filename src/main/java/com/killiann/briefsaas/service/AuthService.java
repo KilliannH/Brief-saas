@@ -8,6 +8,7 @@ import com.killiann.briefsaas.entity.Role;
 import com.killiann.briefsaas.entity.User;
 import com.killiann.briefsaas.repository.UserRepository;
 import com.killiann.briefsaas.repository.EmailVerificationTokenRepository;
+import com.killiann.briefsaas.util.DisposableEmailChecker;
 import com.killiann.briefsaas.util.JwtUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -31,11 +32,16 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final EmailVerificationTokenRepository emailTokenRepository;
     private final MailService mailService;
+    private final DisposableEmailChecker disposableEmailChecker;
 
     @Transactional
     public AuthResponse signup(SignupRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email already in use");
+        }
+
+        if (disposableEmailChecker.isDisposable(request.getEmail())) {
+            throw new RuntimeException("Disposable email addresses are not allowed.");
         }
 
         User user = User.builder()
