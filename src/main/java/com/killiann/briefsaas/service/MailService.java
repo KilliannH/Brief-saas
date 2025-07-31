@@ -25,7 +25,7 @@ public class MailService {
 
     public void sendValidationEmail(String to, UUID publicUuid, String code, String lang) {
         Locale locale = Locale.forLanguageTag(lang);
-        String subject = messageSource.getMessage("mail.validation.subject", null,"!!! fallback sujet FR !!!", locale);
+        String subject = messageSource.getMessage("mail.validation.subject", null, locale);
 
         String link = frontendBaseUrl + "/public/briefs/" + publicUuid;
         String bodyHtml = messageSource.getMessage("mail.validation.body.html", new Object[]{link, code}, locale);
@@ -38,7 +38,7 @@ public class MailService {
             helper.setSubject(subject);
             helper.setText(bodyHtml, true); // true = HTML
 
-            helper.setFrom("no-reply@briefmate.com");
+            helper.setFrom("no-reply@brief-mate.com");
 
             mailSender.send(mimeMessage);
 

@@ -14,6 +14,10 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
@@ -100,11 +104,15 @@ public class BriefService {
         return mapToResponse(updated);
     }
 
-    public List<BriefResponse> getUserBriefs(User user) {
-        return briefRepository.findByOwner(user)
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
+    public Page<BriefResponse> getUserBriefs(User user, String status, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Brief> briefs;
+        if ("ALL".equalsIgnoreCase(status) || status == null) {
+            briefs = briefRepository.findByOwner(user, pageable);
+        } else {
+            briefs = briefRepository.findByOwnerAndStatus(user, BriefStatus.valueOf(status), pageable);
+        }
+        return briefs.map(this::mapToResponse);
     }
 
     public BriefResponse getBriefById(Long id, User user) {

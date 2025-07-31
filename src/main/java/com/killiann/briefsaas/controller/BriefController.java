@@ -2,6 +2,7 @@ package com.killiann.briefsaas.controller;
 
 import com.killiann.briefsaas.dto.*;
 import com.killiann.briefsaas.entity.Brief;
+import com.killiann.briefsaas.entity.BriefStatus;
 import com.killiann.briefsaas.entity.User;
 import com.killiann.briefsaas.exception.BadRequestException;
 import com.killiann.briefsaas.exception.ForbiddenException;
@@ -9,6 +10,7 @@ import com.killiann.briefsaas.service.BriefService;
 import com.killiann.briefsaas.service.PdfService;
 import com.killiann.briefsaas.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,9 +30,13 @@ public class BriefController {
     private final UserService userService;
 
     @GetMapping
-    public ResponseEntity<List<BriefResponse>> getMyBriefs() {
+    public ResponseEntity<Page<BriefResponse>> getMyBriefs(
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "4") int size
+    ) {
         User currentUser = userService.getCurrentUser();
-        List<BriefResponse> briefs = briefService.getUserBriefs(currentUser);
+        Page<BriefResponse> briefs = briefService.getUserBriefs(currentUser, status, page, size);
         return ResponseEntity.ok(briefs);
     }
 
