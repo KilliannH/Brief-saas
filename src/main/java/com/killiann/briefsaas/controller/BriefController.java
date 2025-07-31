@@ -37,7 +37,7 @@ public class BriefController {
             @RequestParam(defaultValue = "4") int size
     ) {
         User currentUser = userService.getCurrentUser();
-        Page<BriefResponse> briefs = briefService.getUserBriefs(currentUser, status, search, page, size);
+        Page<BriefResponse> briefs = briefService.getUserBriefs(currentUser, status, page, size);
         return ResponseEntity.ok(briefs);
     }
 
