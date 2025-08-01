@@ -28,7 +28,7 @@ public class ClientController {
 
     @PostMapping
     public ResponseEntity<Client> createClient(@AuthenticationPrincipal User user,
-                                               @RequestBody Client client) {
+                                               @RequestBody Client client) throws ForbiddenException {
         return ResponseEntity.ok(clientService.createClient(client, user));
     }
 

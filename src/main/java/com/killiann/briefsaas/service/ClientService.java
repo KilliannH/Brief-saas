@@ -34,7 +34,16 @@ public class ClientService {
         return client;
     }
 
-    public Client createClient(Client client, User owner) {
+    public Client createClient(Client client, User owner) throws ForbiddenException {
+        boolean isFree = !owner.isSubscriptionActive();
+
+        if (isFree) {
+            long count = clientRepository.countByOwner(owner);
+            if (count >= 1) {
+                throw new ForbiddenException("Limite atteinte pour un compte gratuit.");
+            }
+        }
+
         client.setOwner(owner);
         return clientRepository.save(client);
     }
