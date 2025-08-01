@@ -45,11 +45,7 @@ public class MailService {
 
             helper.setFrom("no-reply@brief-mate.com");
 
-            try {
-                mailSender.send(mimeMessage);
-            } catch (Exception e) {
-                log.error("❌ Mail send failed: {}", e.getMessage(), e);
-            }
+            mailSender.send(mimeMessage);
 
         } catch (MessagingException e) {
             throw new RuntimeException("Erreur lors de l'envoi de l'email de validation", e);
@@ -70,6 +66,8 @@ public class MailService {
             helper.setTo(user.getEmail());
             helper.setSubject(subject);
             helper.setText(content, true); // HTML enabled
+
+            helper.setFrom("no-reply@brief-mate.com");
 
             mailSender.send(message);
         } catch (MessagingException e) {

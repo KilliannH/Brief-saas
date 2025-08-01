@@ -17,7 +17,6 @@ spring:
     password: ${SMTP_PASS}
     protocol: smtps
     properties:
-      from: no-reply@brief-mate.com
       mail.smtp.auth: true
       mail.smtp.ssl.enable: true
     default-encoding: UTF-8
