@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: briefmate-backend
+    env: java
+    buildCommand: "./mvnw clean package -DskipTests"
+    startCommand: "java -jar target/briefmate.jar --spring.profiles.active=prod"
+    autoDeploy: true
