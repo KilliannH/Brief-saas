@@ -39,9 +39,9 @@ public class Brief {
 
     private String constraints;
 
-    private String clientName;
-
-    private String clientEmail;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "client_id")
+    private Client client;
 
     private Boolean clientValidated = false;
 

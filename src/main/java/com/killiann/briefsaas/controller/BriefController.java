@@ -69,7 +69,7 @@ public class BriefController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<BriefResponse> updateBrief(@PathVariable Long id, @RequestBody BriefRequest request) {
+    public ResponseEntity<BriefResponse> updateBrief(@PathVariable Long id, @RequestBody BriefRequest request) throws ForbiddenException {
         User currentUser = userService.getCurrentUser();
         BriefResponse brief = briefService.updateBrief(id, request, currentUser);
         return ResponseEntity.ok(brief);

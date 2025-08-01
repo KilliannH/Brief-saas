@@ -15,6 +15,5 @@ public class BriefRequest {
     private LocalDate deadline;
     private List<String> deliverables;
     private String constraints;
-    private String clientName;
-    private String clientEmail;
+    private Long clientId;
 }

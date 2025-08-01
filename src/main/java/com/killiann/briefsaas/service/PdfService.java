@@ -45,7 +45,7 @@ public class PdfService {
         }
 
         // Champs classiques
-        document.add(new Paragraph(messageSource.getMessage("pdf.client", null, locale) + ": " + brief.getClientName()));
+        document.add(new Paragraph(messageSource.getMessage("pdf.client", null, locale) + ": " + brief.getClient().getName()));
         document.add(new Paragraph(messageSource.getMessage("pdf.budget", null, locale) + ": " + brief.getBudget()));
         document.add(new Paragraph(messageSource.getMessage("pdf.deadline", null, locale) + ": " + brief.getDeadline()));
         document.add(new Paragraph(messageSource.getMessage("pdf.audience", null, locale) + ": " + brief.getTargetAudience()));
@@ -75,7 +75,7 @@ public class PdfService {
         if (brief.getClientValidated() != null
                 && brief.getClientValidated()
                 && brief.getValidatedAt() != null
-                && brief.getClientName() != null) {
+                && brief.getClient().getName() != null) {
 
             DateTimeFormatter formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(locale);
             String formattedDate = brief.getValidatedAt().format(formatter);
@@ -83,7 +83,7 @@ public class PdfService {
             String validatedLine = messageSource.getMessage("pdf.validated", null, locale)
                     + " " + formattedDate + " "
                     + messageSource.getMessage("pdf.by", null, locale)
-                    + " " + brief.getClientName() + ".";
+                    + " " + brief.getClient().getName() + ".";
 
             document.add(new Paragraph(validatedLine)
                     .setItalic()

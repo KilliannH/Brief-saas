@@ -1,6 +1,7 @@
 package com.killiann.briefsaas.service;
 
 import com.killiann.briefsaas.entity.User;
+import com.killiann.briefsaas.exception.NotFoundException;
 import com.killiann.briefsaas.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,6 +16,6 @@ public class UserService {
     public User getCurrentUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
     }
 }

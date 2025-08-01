@@ -2,14 +2,17 @@ package com.killiann.briefsaas.service;
 
 import com.killiann.briefsaas.dto.BriefRequest;
 import com.killiann.briefsaas.dto.BriefResponse;
+import com.killiann.briefsaas.dto.ClientDto;
 import com.killiann.briefsaas.dto.PublicBriefResponse;
 import com.killiann.briefsaas.entity.Brief;
 import com.killiann.briefsaas.entity.BriefStatus;
+import com.killiann.briefsaas.entity.Client;
 import com.killiann.briefsaas.entity.User;
 import com.killiann.briefsaas.exception.BadRequestException;
 import com.killiann.briefsaas.exception.ForbiddenException;
 import com.killiann.briefsaas.exception.NotFoundException;
 import com.killiann.briefsaas.repository.BriefRepository;
+import com.killiann.briefsaas.repository.ClientRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -31,12 +34,18 @@ import java.util.UUID;
 public class BriefService {
 
     private final BriefRepository briefRepository;
+    private final ClientRepository clientRepository;
     private final MailService mailService;
     private static final Logger log = LoggerFactory.getLogger(BriefService.class);
 
     public BriefResponse createBrief(BriefRequest request, User user) throws ForbiddenException {
         checkBriefCreationAllowed(user);
-
+        Client client = null;
+        if (request.getClientId() != null) {
+            client = clientRepository.findById(request.getClientId())
+                    .filter(c -> c.getOwner().getId().equals(user.getId()))
+                    .orElseThrow(() -> new ForbiddenException("Client not found or unauthorized"));
+        }
         Brief brief = Brief.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
@@ -46,8 +55,7 @@ public class BriefService {
                 .deadline(request.getDeadline())
                 .deliverables(request.getDeliverables())
                 .constraints(request.getConstraints())
-                .clientName(request.getClientName())
-                .clientEmail(request.getClientEmail())
+                .client(client)
                 .owner(user)
                 .publicUuid(UUID.randomUUID())
                 .status(BriefStatus.DRAFT)
@@ -75,7 +83,7 @@ public class BriefService {
         }
 
         mailService.sendValidationEmail(
-                brief.getClientEmail(),
+                brief.getClient().getEmail(),
                 brief.getPublicUuid(),
                 brief.getValidationCode(),
                 currentUser.getLanguage()
@@ -84,7 +92,7 @@ public class BriefService {
         brief.setStatus(BriefStatus.SUBMITTED);
         Brief saved = briefRepository.save(brief);
 
-        log.info("Brief {} submitted to client {}", briefId, brief.getClientEmail());
+        log.info("Brief {} submitted to client {}", briefId, brief.getClient().getEmail());
 
         return mapToResponse(saved);
     }
@@ -118,17 +126,17 @@ public class BriefService {
     public BriefResponse getBriefById(Long id, User user) {
         Brief brief = briefRepository.findById(id)
                 .filter(b -> b.getOwner().getId().equals(user.getId()))
-                .orElseThrow(() -> new RuntimeException("Brief not found"));
+                .orElseThrow(() -> new NotFoundException("Brief not found"));
         return mapToResponse(brief);
     }
 
     public PublicBriefResponse getPublicBrief(UUID uuid) {
         Brief brief = briefRepository.findByPublicUuid(uuid)
-                .orElseThrow(() -> new RuntimeException("Public brief not found"));
+                .orElseThrow(() -> new NotFoundException("Public brief not found"));
         return mapToPublicResponse(brief);
     }
 
-    public BriefResponse updateBrief(Long id, BriefRequest request, User user) {
+    public BriefResponse updateBrief(Long id, BriefRequest request, User user) throws ForbiddenException {
         Brief brief = briefRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Brief not found"));
 
@@ -144,6 +152,13 @@ public class BriefService {
             }
         }
 
+        if (request.getClientId() != null) {
+            Client client = clientRepository.findById(request.getClientId())
+                    .filter(c -> c.getOwner().getId().equals(user.getId()))
+                    .orElseThrow(() -> new ForbiddenException("Unauthorized client"));
+            brief.setClient(client);
+        }
+
         brief.setTitle(request.getTitle());
         brief.setDescription(request.getDescription());
         brief.setObjectives(request.getObjectives());
@@ -152,8 +167,6 @@ public class BriefService {
         brief.setDeadline(request.getDeadline());
         brief.setDeliverables(request.getDeliverables());
         brief.setConstraints(request.getConstraints());
-        brief.setClientName(request.getClientName());
-        brief.setClientEmail(request.getClientEmail());
 
         Brief updated = briefRepository.save(brief);
         return mapToResponse(updated);
@@ -162,7 +175,7 @@ public class BriefService {
     public void deleteBrief(Long id, User user) {
         Brief brief = briefRepository.findById(id)
                 .filter(b -> b.getOwner().getId().equals(user.getId()))
-                .orElseThrow(() -> new RuntimeException("Brief not found"));
+                .orElseThrow(() -> new NotFoundException("Brief not found"));
 
         if (!brief.getOwner().getId().equals(user.getId())) {
             try {
@@ -178,7 +191,7 @@ public class BriefService {
     public BriefResponse validateBrief(Long id, User user) {
         Brief brief = briefRepository.findById(id)
                 .filter(b -> b.getOwner().getId().equals(user.getId()))
-                .orElseThrow(() -> new RuntimeException("Brief not found"));
+                .orElseThrow(() -> new NotFoundException("Brief not found"));
 
         brief.setStatus(BriefStatus.VALIDATED);
         brief.setValidatedAt(LocalDateTime.now());
@@ -189,7 +202,7 @@ public class BriefService {
 
     public BriefResponse publicValidate(UUID uuid, String code) {
         Brief brief = briefRepository.findByPublicUuid(uuid)
-                .orElseThrow(() -> new RuntimeException("Public brief not found"));
+                .orElseThrow(() -> new NotFoundException("Public brief not found"));
 
         if (brief.getValidationCode() == null || !brief.getValidationCode().equals(code)) {
             throw new RuntimeException("Invalid validation code");
@@ -207,6 +220,15 @@ public class BriefService {
         return String.format("%06d", new SecureRandom().nextInt(1_000_000));
     }
 
+    private ClientDto mapClient(Client client) {
+        if (client == null) return null;
+        return ClientDto.builder()
+                .id(client.getId())
+                .name(client.getName())
+                .email(client.getEmail())
+                .build();
+    }
+
     private BriefResponse mapToResponse(Brief brief) {
         return BriefResponse.builder()
                 .id(brief.getId())
@@ -219,8 +241,7 @@ public class BriefService {
                 .deadline(brief.getDeadline())
                 .deliverables(brief.getDeliverables())
                 .constraints(brief.getConstraints())
-                .clientName(brief.getClientName())
-                .clientEmail(brief.getClientEmail())
+                .client(mapClient(brief.getClient()))
                 .clientValidated(brief.getClientValidated())
                 .validatedAt(brief.getValidatedAt())
                 .status(brief.getStatus())
@@ -241,7 +262,7 @@ public class BriefService {
                 .deadline(brief.getDeadline())
                 .deliverables(brief.getDeliverables())
                 .constraints(brief.getConstraints())
-                .clientName(brief.getClientName())
+                .clientName(brief.getClient().getName())
                 .clientValidated(brief.getClientValidated())
                 .validatedAt(brief.getValidatedAt())
                 .status(brief.getStatus())
