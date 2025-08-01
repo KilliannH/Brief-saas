@@ -1,6 +1,6 @@
 spring.datasource.url=jdbc:postgresql://localhost:5432/briefsaas
-spring.datasource.username=postgres
-spring.datasource.password=postgres
+spring.datasource.username=
+spring.datasource.password=
 
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
@@ -10,20 +10,16 @@ spring.datasource.hikari.connection-init-sql=SET NAMES 'UTF8'
 
 # Optional logging
 logging.level.org.hibernate.SQL=DEBUG
-logging.level.org.springframework.security=DEBUG
-logging.level.org.springframework.security.web.access=DEBUG
 
-spring.mail.host=mail.privateemail.com
-spring.mail.port=465
+spring.mail.host=
+spring.mail.port=
 spring.mail.username=
 spring.mail.password=
-spring.mail.protocol=smtps
 spring.mail.properties.mail.smtp.auth=true
-spring.mail.properties.mail.smtp.ssl.enable=true
-spring.mail.default-encoding=UTF-8
+spring.mail.properties.mail.smtp.starttls.enable=true
 
-stripe.api.secret=
-stripe.webhook.secret=
+stripe.api.secret=sk_test_xxx
+stripe.webhook.secret=whsec_yyy
 
 stripe.success.url=http://localhost:5173/payment/success
 stripe.cancel.url=http://localhost:5173/payment/cancel
