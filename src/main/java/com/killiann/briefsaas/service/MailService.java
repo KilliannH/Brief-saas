@@ -1,9 +1,12 @@
 package com.killiann.briefsaas.service;
 
+import com.killiann.briefsaas.controller.StripeController;
 import com.killiann.briefsaas.entity.User;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -16,6 +19,8 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class MailService {
+
+    private static final Logger log = LoggerFactory.getLogger(MailService.class);
 
     private final JavaMailSender mailSender;
     private final MessageSource messageSource;
@@ -40,7 +45,11 @@ public class MailService {
 
             helper.setFrom("no-reply@brief-mate.com");
 
-            mailSender.send(mimeMessage);
+            try {
+                mailSender.send(mimeMessage);
+            } catch (Exception e) {
+                log.error("❌ Mail send failed: {}", e.getMessage(), e);
+            }
 
         } catch (MessagingException e) {
             throw new RuntimeException("Erreur lors de l'envoi de l'email de validation", e);
