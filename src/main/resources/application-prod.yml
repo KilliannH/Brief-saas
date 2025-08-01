@@ -39,3 +39,5 @@ stripe:
 
 frontend:
   baseUrl: ${FRONTEND_BASE_URL}
+
+JWT_SECRET: ${JWT_SECRET}
