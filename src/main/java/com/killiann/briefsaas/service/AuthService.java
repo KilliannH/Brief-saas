@@ -83,6 +83,7 @@ public class AuthService {
         return new AuthResponse(token);
     }
 
+    @Transactional
     public AuthResponse verifyEmail(String token) {
         EmailVerificationToken verificationToken = emailTokenRepository.findByToken(token)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token invalide ou expiré"));
@@ -95,7 +96,6 @@ public class AuthService {
         user.setEnabled(true);
         userRepository.save(user);
 
-        emailTokenRepository.delete(verificationToken);
         return new AuthResponse(token);
     }
 }

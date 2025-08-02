@@ -58,8 +58,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/verify").permitAll()
-                        .requestMatchers("/auth/**", "/stripe/webhook", "/stripe/portal").permitAll()
+                        .requestMatchers("/auth/**", "/stripe/webhook", "/stripe/portal", "/error").permitAll()
                         .requestMatchers("/me/**").authenticated()
                         .requestMatchers("/briefs/public/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
