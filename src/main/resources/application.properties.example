@@ -1,0 +1,28 @@
+spring.datasource.url=jdbc:postgresql://localhost:5432/briefsaas
+spring.datasource.username=
+spring.datasource.password=
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+
+# UTF-8 recommended
+spring.datasource.hikari.connection-init-sql=SET NAMES 'UTF8'
+
+# Optional logging
+logging.level.org.hibernate.SQL=DEBUG
+
+spring.mail.host=
+spring.mail.port=
+spring.mail.username=
+spring.mail.password=
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+
+stripe.api.secret=sk_test_xxx
+stripe.webhook.secret=whsec_yyy
+
+stripe.success.url=http://localhost:5173/payment/success
+stripe.cancel.url=http://localhost:5173/payment/cancel
+
+frontend.baseUrl=http://localhost:5173
+JWT_SECRET=

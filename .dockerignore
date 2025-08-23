@@ -1,0 +1,9 @@
+target/
+node_modules/
+*.iml
+.idea/
+.git
+.env
+.application.properties.example
+.application.properties
+.DS_Store
