@@ -121,10 +121,6 @@ public class PdfService {
 
         // Colonne gauche - Logo + BriefMate
         Div logoDiv = new Div();
-        logoDiv.add(new Paragraph("📋")
-                .setFontSize(24)
-                .setMargin(0)
-                .setPaddingBottom(5));
         logoDiv.add(new Paragraph("BriefMate")
                 .setFontSize(20)
                 .setBold()
@@ -195,23 +191,23 @@ public class PdfService {
         infoTable.setMarginBottom(25);
 
         // Style des cellules
-        addInfoRow(infoTable, "👤 " + messageSource.getMessage("pdf.client", null, locale),
+        addInfoRow(infoTable, messageSource.getMessage("pdf.client", null, locale),
                 brief.getClient().getName(), BRAND_BLUE);
 
         if (brief.getBudget() != null) {
-            addInfoRow(infoTable, "💰 " + messageSource.getMessage("pdf.budget", null, locale),
+            addInfoRow(infoTable, messageSource.getMessage("pdf.budget", null, locale),
                     brief.getBudget(), SUCCESS_GREEN);
         }
 
         if (brief.getDeadline() != null) {
             String formattedDeadline = brief.getDeadline()
                     .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale));
-            addInfoRow(infoTable, "⏰ " + messageSource.getMessage("pdf.deadline", null, locale),
+            addInfoRow(infoTable, messageSource.getMessage("pdf.deadline", null, locale),
                     formattedDeadline, ACCENT_ORANGE);
         }
 
         if (brief.getTargetAudience() != null && !brief.getTargetAudience().isBlank()) {
-            addInfoRow(infoTable, "🎯 " + messageSource.getMessage("pdf.audience", null, locale),
+            addInfoRow(infoTable, messageSource.getMessage("pdf.audience", null, locale),
                     brief.getTargetAudience(), new DeviceRgb(168, 85, 247));
         }
 
@@ -361,9 +357,6 @@ public class PdfService {
             validationHeader.setMarginBottom(10);
 
             Cell iconCell = new Cell()
-                    .add(new Paragraph("✅")
-                            .setFontSize(20)
-                            .setMargin(0))
                     .setBorder(Border.NO_BORDER)
                     .setWidth(30);
 
