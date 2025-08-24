@@ -31,6 +31,9 @@ public class User implements UserDetails {
     private String firstname;
     private String lastname;
 
+    @Column(name = "google_id")
+    private String googleId;
+
     @Column(nullable = false)
     private boolean enabled = false;
 

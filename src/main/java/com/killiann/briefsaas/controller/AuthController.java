@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -29,5 +31,10 @@ public class AuthController {
     @GetMapping("/verify")
     public ResponseEntity<AuthResponse> verifyEmail(@RequestParam String token) {
         return ResponseEntity.ok(authService.verifyEmail(token));
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> body) {
+        return ResponseEntity.ok(authService.googleLogin(body));
     }
 }

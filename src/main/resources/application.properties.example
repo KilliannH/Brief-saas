@@ -26,3 +26,5 @@ stripe.cancel.url=http://localhost:5173/payment/cancel
 
 frontend.baseUrl=http://localhost:5173
 JWT_SECRET=
+
+google.client.id=
