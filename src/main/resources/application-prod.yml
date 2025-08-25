@@ -15,11 +15,15 @@ spring:
     port: ${SMTP_PORT}
     username: ${SMTP_USER}
     password: ${SMTP_PASS}
-    protocol: smtps
+    protocol: smtp
     properties:
-      mail.smtp.auth: true
-      mail.smtp.ssl.enable: true
-    default-encoding: UTF-8
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          ssl:
+            enable: false
 
 logging:
   level:
@@ -41,3 +45,7 @@ frontend:
   baseUrl: ${FRONTEND_BASE_URL}
 
 JWT_SECRET: ${JWT_SECRET}
+
+google:
+  client:
+    id: ${GOOGLE_CLIENT_ID}

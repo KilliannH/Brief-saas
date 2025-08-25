@@ -239,9 +239,10 @@ public class PdfService {
     }
 
     private void addSection(Document document, String title, String content, Color accentColor) {
-        // Titre de section avec ligne colorée
+        // Conteneur principal pour garder titre + contenu ensemble
         Div sectionDiv = new Div()
-                .setMarginBottom(20);
+                .setMarginBottom(20)
+                .setKeepTogether(true); // AJOUT : Empêche la coupure de page
 
         // Barre colorée + titre
         Table titleTable = new Table(new float[]{1, 20});
@@ -285,6 +286,11 @@ public class PdfService {
     }
 
     private void addListSection(Document document, String title, java.util.List<String> items, Color accentColor) {
+        // Conteneur principal pour garder titre + contenu ensemble
+        Div sectionDiv = new Div()
+                .setMarginBottom(20)
+                .setKeepTogether(true); // AJOUT : Empêche la coupure de page
+
         // Titre de section
         Table titleTable = new Table(new float[]{1, 20});
         titleTable.setWidth(UnitValue.createPercentValue(100));
@@ -308,7 +314,6 @@ public class PdfService {
 
         titleTable.addCell(colorBar);
         titleTable.addCell(titleCell);
-        document.add(titleTable);
 
         // Liste avec puces modernes
         List list = new List()
@@ -332,7 +337,10 @@ public class PdfService {
                 .setBorder(new SolidBorder(new DeviceRgb(254, 240, 138), 1)); // border-yellow-200
 
         listDiv.add(list);
-        document.add(listDiv);
+
+        sectionDiv.add(titleTable);
+        sectionDiv.add(listDiv);
+        document.add(sectionDiv);
     }
 
     private void addValidationSection(Document document, Brief brief, Locale locale) {
